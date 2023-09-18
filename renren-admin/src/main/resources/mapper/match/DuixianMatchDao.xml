@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.match.dao.DuixianMatchDao">
+
+    <insert id="insert" parameterType="io.renren.modules.match.dto.DuixianMatchDTO">
+
+         insert into duixian_match(id,duixian_id,duixian_key, league_id, league, team_home_id, team_home_name, team_away_id, team_away_name, begin_date,  score, running, send_date, rule)
+         values (
+                 #{id},#{duixianId},#{duixianKey},#{leagueId},#{league},#{teamHomeId},#{teamHomeName},#{teamAwayId},#{teamAwayName},#{beginDate},#{score},#{running},#{sendDate},#{rule}
+                )
+    </insert>
+
+
+    <select id="getFinishedList" resultType="io.renren.modules.match.dto.DuixianMatchDTO">
+        select *
+        from duixian_match t
+        where t.running = 0 and t.result is null
+    </select>
+
+    <update id="updateStatusByKey" parameterType="java.lang.String">
+        update duixian_match t
+            set running = 0
+        where t.duixian_key = #{key}
+    </update>
+
+<!--    <select id="resultDto" resultType="io.renren.modules.match.dto.resultDto">-->
+<!--        SELECT (SELECT count(1)-->
+<!--                FROM match_schedule t-->
+<!--                WHERE date_format(t.match_time, '%Y-%m-%d') = date_format(#{date}, '%Y-%m-%d')-->
+<!--                  AND (t.rules LIKE '%A%' OR t.rules LIKE '%B%' OR t.rules LIKE '%G%')-->
+<!--                  AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70) AS 'mznum', (-->
+<!--            SELECT count(1)-->
+<!--            FROM match_schedule t-->
+<!--            WHERE date_format(t.match_time, '%Y-%m-%d') = date_format(#{date}, '%Y-%m-%d')-->
+<!--              AND (t.rules LIKE '%A%' OR t.rules LIKE '%B%' OR t.rules LIKE '%G%')) AS 'allnum'-->
+<!--        FROM DUAL-->
+<!--    </select>-->
+
+
+<!--    <select id="copyInfo">-->
+
+<!--        insert into match_his_schedule-->
+<!--            (select t.*-->
+<!--             from match_schedule t-->
+<!--             where DATE_FORMAT(t.match_time, '%Y%m%d') = #{date}-->
+<!--            )-->
+
+<!--    </select>-->
+
+<!--    <select id="deleInfo">-->
+
+<!--        delete-->
+<!--        from match_schedule t-->
+<!--        where DATE_FORMAT(t.match_time, '%Y%m%d') = #{date}-->
+
+<!--    </select>-->
+
+<!--    <select id="getList" resultType="io.renren.modules.match.dto.MatchScheduleDTO">-->
+<!--        select t.*-->
+<!--        from match_schedule t-->
+<!--        where 1=1-->
+<!--        <if test="homeTeamName != null and homeTeamName.trim() != ''">-->
+<!--            and t.home_team_name like #{homeTeamName}-->
+<!--        </if>-->
+<!--        <if test="awayTeamName != null and awayTeamName.trim() != ''">-->
+<!--            and t.away_team_name like #{awayTeamName}-->
+<!--        </if>-->
+<!--        <if test="startDate != null and startDate.trim() != ''">-->
+<!--            AND DATE_FORMAT(t.match_time, '%Y-%m-%d') >= #{startDate}-->
+<!--        </if>-->
+<!--        <if test="endDate != null and endDate.trim() != ''">-->
+<!--            AND #{endDate} >= DATE_FORMAT(t.match_time, '%Y-%m-%d')-->
+<!--        </if>-->
+
+
+<!--        <if test="rules != null and rules.trim() != ''">-->
+<!--            and t.rules like #{rules}-->
+<!--        </if>-->
+
+<!--        ORDER BY t.match_num DESC,t.match_time-->
+<!--    </select>-->
+
+
+
+
+
+</mapper>

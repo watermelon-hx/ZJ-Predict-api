@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.match.dao.MatchScheduleDao">
+
+    <select id="getByMatchId" resultType="io.renren.modules.match.dto.MatchScheduleDTO">
+        select t.*
+        from match_schedule t
+        where t.match_id = #{matchId}
+    </select>
+
+
+    <select id="resultDto" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (SELECT count(1)
+                FROM match_schedule t
+                WHERE date_format(t.match_time, '%Y-%m-%d') = date_format(#{date}, '%Y-%m-%d')
+                  AND (t.rules LIKE '%A%' OR t.rules LIKE '%B%' OR t.rules LIKE '%G%')
+                  AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70) AS 'mznum', (
+            SELECT count(1)
+            FROM match_schedule t
+            WHERE date_format(t.match_time, '%Y-%m-%d') = date_format(#{date}, '%Y-%m-%d')
+              AND (t.rules LIKE '%A%' OR t.rules LIKE '%B%' OR t.rules LIKE '%G%')) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="copyInfo">
+
+        insert into match_his_schedule
+            (select t.*
+             from match_schedule t
+             where DATE_FORMAT(t.match_time, '%Y%m%d') = #{date}
+            )
+
+    </select>
+
+    <select id="deleInfo">
+
+        delete
+        from match_schedule t
+        where DATE_FORMAT(t.match_time, '%Y%m%d') = #{date}
+
+    </select>
+
+    <select id="getList" resultType="io.renren.modules.match.dto.MatchScheduleDTO">
+        select t.*
+        from match_schedule t
+        where 1=1
+        <if test="homeTeamName != null and homeTeamName.trim() != ''">
+            and t.home_team_name like #{homeTeamName}
+        </if>
+        <if test="awayTeamName != null and awayTeamName.trim() != ''">
+            and t.away_team_name like #{awayTeamName}
+        </if>
+        <if test="startDate != null and startDate.trim() != ''">
+            AND DATE_FORMAT(t.match_time, '%Y-%m-%d') >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate.trim() != ''">
+            AND #{endDate} >= DATE_FORMAT(t.match_time, '%Y-%m-%d')
+        </if>
+
+
+        <if test="rules != null and rules.trim() != ''">
+            and t.rules like #{rules}
+        </if>
+
+        ORDER BY t.match_num DESC,t.match_time
+    </select>
+
+
+    <select id="getByMatchTime" resultType="io.renren.modules.match.dto.MatchScheduleDTO">
+        select t.*
+        from match_schedule t
+        where t.match_Num = #{time}
+    </select>
+    <select id="getReA" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%A1%'
+                     AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+               ) AS 'mznum', (
+            SELECT COUNT(1)
+            FROM match_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%A1%'
+              AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+            ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+    <select id="getReG" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%G1%'
+                     AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+               ) AS 'mznum', (
+            SELECT COUNT(1)
+            FROM match_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%G1%'
+              AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+            ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="getReG2" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%G2%'
+                     AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+               ) AS 'mznum', (
+            SELECT COUNT(1)
+            FROM match_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%G2%'
+              AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+            ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="getReX" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%X%'
+                     AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+               ) AS 'mznum', (
+            SELECT COUNT(1)
+            FROM match_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%X%'
+              AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+            ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="getReF" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores75 + t.away_scores75
+                     AND t.rules LIKE '%F%'
+                     AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+               ) AS 'mznum', (
+            SELECT COUNT(1)
+            FROM match_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%F%'
+              AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+            ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="getReAHis" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%A1%'
+               ) + (
+                   SELECT COUNT(1)
+                   FROM match_his_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%A1%'
+               ) AS 'mznum', (SELECT COUNT(1) FROM match_schedule t WHERE t.status_id = 8 AND t.rules LIKE '%A1%') + (
+            SELECT COUNT(1)
+            FROM match_his_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%A1%'
+        ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="getReGHis" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%G1%'
+               ) + (
+                   SELECT COUNT(1)
+                   FROM match_his_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%G1%'
+               ) AS 'mznum', (SELECT COUNT(1) FROM match_schedule t WHERE t.status_id = 8 AND t.rules LIKE '%G1%') + (
+            SELECT COUNT(1)
+            FROM match_his_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%G1%'
+        ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="getReG2His" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%G2%'
+               ) + (
+                   SELECT COUNT(1)
+                   FROM match_his_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%G2%'
+               ) AS 'mznum', (SELECT COUNT(1) FROM match_schedule t WHERE t.status_id = 8 AND t.rules LIKE '%G2%') + (
+            SELECT COUNT(1)
+            FROM match_his_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%G2%'
+        ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="getReXHis" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%X%'
+               ) + (
+                   SELECT COUNT(1)
+                   FROM match_his_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%X%'
+               ) AS 'mznum', (SELECT COUNT(1) FROM match_schedule t WHERE t.status_id = 8 AND t.rules LIKE '%X%') + (
+            SELECT COUNT(1)
+            FROM match_his_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%X%'
+        ) AS 'allnum'
+        FROM DUAL
+    </select>
+
+
+    <select id="getReFHis" resultType="io.renren.modules.match.dto.resultDto">
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores75 + t.away_scores75
+                     AND t.rules LIKE '%F%'
+               ) + (
+                   SELECT COUNT(1)
+                   FROM match_his_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores75 + t.away_scores75
+                     AND t.rules LIKE '%F%'
+               ) AS 'mznum', (SELECT COUNT(1) FROM match_schedule t WHERE t.status_id = 8 AND t.rules LIKE '%F%') + (
+            SELECT COUNT(1)
+            FROM match_his_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%F%'
+        ) AS 'allnum'
+        FROM DUAL
+    </select>
+    <select id="getCompetitionRate" resultType="java.lang.String">
+
+        SELECT xx.competition_name
+        FROM (
+                 SELECT count(1) AS total,
+                        sum(IF(x.home_scores + x.away_scores > x.home_scores70 + x.away_scores70, 1, 0)),
+                        sum(IF(x.home_scores + x.away_scores > x.home_scores70 + x.away_scores70, 1, 0)) / count(1) *
+                        100      AS ratio,
+                        x.competition_name
+                 FROM match_schedule x
+                 where x.status_id = 8
+                   and DATE_ADD(curdate(), INTERVAL -0 day) > x.match_time
+                 GROUP BY x.competition_name
+             ) xx
+        WHERE xx.total >= 2
+          and 45 > xx.ratio
+    </select>
+    <select id="getReA2" resultType="io.renren.modules.match.dto.resultDto">
+
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%A2%'
+                     AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+               ) AS 'mznum', (
+            SELECT COUNT(1)
+            FROM match_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%A2%'
+              AND DATE_FORMAT(t.match_time, '%Y-%m-%d') = #{date}
+            ) AS 'allnum'
+        FROM DUAL
+
+    </select>
+    <select id="getReA2His" resultType="io.renren.modules.match.dto.resultDto">
+
+        SELECT (
+                   SELECT COUNT(1)
+                   FROM match_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%A2%'
+               ) + (
+                   SELECT COUNT(1)
+                   FROM match_his_schedule t
+                   WHERE t.status_id = 8
+                     AND t.home_scores + t.away_scores > t.home_scores70 + t.away_scores70
+                     AND t.rules LIKE '%A2%'
+               ) AS 'mznum', (SELECT COUNT(1) FROM match_schedule t WHERE t.status_id = 8 AND t.rules LIKE '%A2%') + (
+            SELECT COUNT(1)
+            FROM match_his_schedule t
+            WHERE t.status_id = 8
+              AND t.rules LIKE '%A2%'
+        ) AS 'allnum'
+        FROM DUAL
+
+
+    </select>
+    <select id="getCompetitionBigRate" resultType="java.lang.String">
+
+        SELECT xx.competition_name
+        FROM (
+                 SELECT count(1) AS total,
+                        sum(IF(x.home_scores + x.away_scores > x.home_scores70 + x.away_scores70, 1, 0)),
+                        sum(IF(x.home_scores + x.away_scores > x.home_scores70 + x.away_scores70, 1, 0)) / count(1) *
+                        100      AS ratio,
+                        x.competition_name
+                 FROM match_schedule x
+                 where x.status_id = 8
+                 GROUP BY x.competition_name
+             ) xx
+        WHERE
+
+              xx.total >=6 and
+              xx.ratio >= 55
+
+
+    </select>
+
+
+</mapper>
