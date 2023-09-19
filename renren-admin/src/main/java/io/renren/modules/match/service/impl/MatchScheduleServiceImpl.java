@@ -23,11 +23,21 @@ import io.renren.modules.matchContent.dto.MatchContentDTO;
 import io.renren.modules.matchContent.service.MatchContentService;
 import io.renren.modules.security.user.SecurityUser;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
+import org.apache.http.*;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -64,13 +74,52 @@ public class MatchScheduleServiceImpl extends CrudServiceImpl<DuixianMatchDao, D
     private static String token = "";
 
     private static final String url_70 = "http://api.dui-xian.com:8002/api/oddsindex/minfo/duixian_history/last_10";
-    private static final String param_70 = "{\"code\":\"554ddce960039c20a7a4fcd4190d8090\",\"uid\":1619}";
+    private static final String param_70 = "{\"code\":\"554ddce960039c20a7a4fcd4190d8090\",\"uid\":1545}";
     private static final String url_half = "http://api.dui-xian.com:8002/api/oddsindex/minfo/duixian_history/last_10";
-    private static final String param_half = "{\"code\":\"9443a9d982bb1a7a3580998d33a39b16\",\"uid\":1619}";
+    private static final String param_half = "{\"code\":\"9443a9d982bb1a7a3580998d33a39b16\",\"uid\":1545}";
 
     private static final String url_checkResult = "http://api.dui-xian.com:8002/api/oddsindex/minfo/list/record";
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    public static String orderId = "O23091914175478673953" ;
+    public static String pwd = "b10bf3ea74c14b8da1004eb03e35aca2" ;
+    public static String proxyHost = "flow.hailiangip.com" ;
+    public static int proxyPort = 14223;
+
+    private static String dynamicIP;
+
+    private static Long beginTime;
+
+    /**
+     * 提取ip接口链接
+     */
+    public static String apiUrl = "http://api.hailiangip.com:8422/api/getIp";
+    /**
+     * 目标url
+     */
+    private static String destUrl = "http://api.hailiangip.com:8422/api/myIp";
+
+    /**
+     * 提取ip协议类型 1:http/https 2:socks5
+     */
+    public static int type = 1;
+
+    /**
+     * 提取个数 min:1  max:200
+     */
+    public static int num = 1;
+
+    /**
+     * 解绑时长
+     */
+    public static int unbindTime = 600;
+
+    /**
+     * 返回数据格式 0:json  1:txt  2:html
+     */
+    public static int dataType = 0;
+
+    private static int retryTimes = 5;
 
 //    private static final String date = "20230716";
 
@@ -81,365 +130,286 @@ public class MatchScheduleServiceImpl extends CrudServiceImpl<DuixianMatchDao, D
     private MatchContentService matchContentService;
 
 
-//    @Override
-//    public QueryWrapper<MatchScheduleEntity> getWrapper(Map<String, Object> params) {
-//        QueryWrapper<MatchScheduleEntity> wrapper = new QueryWrapper<>();
-//
-//        wrapper.eq("tenant_code", TenantContext.getTenantCode(SecurityUser.getUser()));
-//        return wrapper;
-//    }
 
-
-//    public void getMatchList() throws IOException, ParseException {
-//
-//        SimpleDateFormat sf = new SimpleDateFormat("yyyyMMdd");
-//        Date date = new Date();//取时间
-//        Calendar calendar = new GregorianCalendar();
-//        calendar.setTime(date);
-//        calendar.add(calendar.DATE, 1);//把日期往后增加一天
-//        date = calendar.getTime();
-//        System.err.println(sf.format(date));
-//
-//        String addr = "https://open.sportnanoapi.com/api/v5/football/match/schedule/diary?user=" + user + "&secret=" + secret + "&date=" + sf.format(date);
-//        URL url = new URL(addr);
-//        StringBuffer buffer = new StringBuffer();
-//        //http协议传输
-//        HttpURLConnection httpUrlConn = (HttpURLConnection) url.openConnection();
-//        httpUrlConn.setDoOutput(true);
-//        httpUrlConn.setDoInput(true);
-//        httpUrlConn.setUseCaches(false);
-//        httpUrlConn.connect();
-//        //将返回的输入流转换成字符串
-//        InputStream inputStream = httpUrlConn.getInputStream();
-//        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "utf-8");
-//        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-//        String str = null;
-//        while ((str = bufferedReader.readLine()) != null) {
-//            buffer.append(str);
-//        }
-//        bufferedReader.close();
-//        inputStreamReader.close();
-//        //释放资源
-//        inputStream.close();
-//        inputStream = null;
-//        httpUrlConn.disconnect();
-//        saveMatch(buffer.toString());
-//
-//    }
-
-//    @Override
-//    public PageData<MatchScheduleDTO> page(Map<String, Object> params) {
-//        //转换成like
-//
-//        String homeTeamName = params.get("homeTeamName") + "";
-//        if (StringUtils.isNotEmpty(homeTeamName)) {
-//            params.put("homeTeamName", "%" + homeTeamName + "%");
-//        }
-//
-//
-//        String awayTeamName = params.get("awayTeamName") + "";
-//        if (StringUtils.isNotEmpty(awayTeamName)) {
-//            params.put("awayTeamName", "%" + awayTeamName + "%");
-//        }
-//
-//
-//        String rules = params.get("rules") + "";
-//        if (StringUtils.isNotEmpty(rules)) {
-//
-//            params.put("rules", "%" + rules + "%");
-//        }
-//
-//
-//        IPage<MatchScheduleEntity> page = getPage(params, null, false);
-//        List<MatchScheduleDTO> listP = new ArrayList<>();
-//        List<MatchScheduleDTO> list = baseDao.getList(params);
-//        for (MatchScheduleDTO dto : list) {
-//            listP.add(dto);
-//        }
-//
-//        return new PageData<>(listP, page.getTotal());
-//    }
-
-
-//    /**
-//     * 保存数据
-//     *
-//     * @param str
-//     * @return
-//     */
-//    public String saveMatch(String str) throws ParseException {
-//
-//        JSONObject json = JSONObject.parseObject(str);
-//        JSONObject results = json.getJSONObject("results");
-//        JSONArray match = results.getJSONArray("match");
-//        JSONArray competition = results.getJSONArray("competition");
-//        JSONArray team = results.getJSONArray("team");
-//        Map<Integer, String> competitionMap = new HashMap<>();
-//        for (int i = 0; i < competition.size(); i++) {
-//            Object obj = competition.get(i);
-//            Map entity = (Map) obj;
-//            competitionMap.put(Integer.parseInt(entity.get("id") + ""), (String) entity.get("name"));
-//        }
-//        Map<Integer, String> teamMap = new HashMap<>();
-//        for (int i = 0; i < team.size(); i++) {
-//            Object obj = team.get(i);
-//            Map entity = (Map) obj;
-//            teamMap.put(Integer.parseInt(entity.get("id") + ""), (String) entity.get("name"));
-//        }
-//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
-//
-//
-//        for (int i = 0; i < match.size(); i++) {
-//            Object obj = match.get(i);
-//            Map entity = (Map) obj;
-//
-//            MatchScheduleDTO dto = new MatchScheduleDTO();
-//            dto.setMatchId(Long.valueOf(entity.get("id") + ""));
-//            dto.setCompetitionId(Integer.parseInt(entity.get("competition_id") + ""));
-//            dto.setCompetitionName(competitionMap.get(dto.getCompetitionId()));
-//            dto.setHomeTeamId(Integer.parseInt(entity.get("home_team_id") + ""));
-//            dto.setHomeTeamName(teamMap.get(dto.getHomeTeamId()));
-//            dto.setAwayTeamId(Integer.parseInt(entity.get("away_team_id") + ""));
-//            dto.setAwayTeamName(teamMap.get(dto.getAwayTeamId()));
-//            dto.setStatusId(Integer.parseInt(entity.get("status_id") + ""));
-//
-//            long date_temp = Long.valueOf(entity.get("match_time") + "");
-//            String date_string = sdf.format(new Date(date_temp * 1000L));
-//            Date parse = sdf.parse(date_string);
-//            dto.setMatchTime(parse);
-//            Object home_scores = entity.get("home_scores");
-//            dto.setHomeScores(Integer.valueOf(JSONArray.parseArray(home_scores.toString()).get(0) + ""));//主队比分
-//            dto.setHomeHalfScores(Integer.valueOf(JSONArray.parseArray(home_scores.toString()).get(1) + ""));//主队半場比分
-//            Object away_scores = entity.get("away_scores");
-//            dto.setAwayScores(Integer.valueOf(JSONArray.parseArray(away_scores.toString()).get(0) + ""));//客队比分
-//            dto.setAwayHalfScores(Integer.valueOf(JSONArray.parseArray(away_scores.toString()).get(1) + ""));//客队半场比分
-//            dto.setRemark("");
-//            dto.setRules("");
-//            dto.setResults("");
-//            dto.setHalfResults("");
-//
-//
-//            this.save(dto);
-//
-//
-//        }
-//
-//
-//        return null;
-//    }
 
 
     public void realTimeStatistics() throws Exception {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        String strSentDate = format.format(new Date());
-        List<WxUserDTO> list2 = this.wxUserService.getList(strSentDate);
-        ArrayList<String> users = new ArrayList<>();
-        if(list2 != null){
-            for (WxUserDTO wx : list2) {
-                users.add(wx.getOpenId());
-            }
+        if(retryTimes <= 0){
+            retryTimes = 5;
+            dynamicIP = null;
+            token = null;
         }
-//        users.clear();
-//        users.add("UID_DuLmBRC1Ec6KDqpBqzYGFHYLIU4c");
+        try {
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+            String strSentDate = format.format(new Date());
+            List<WxUserDTO> list2 = this.wxUserService.getList(strSentDate);
+            ArrayList<String> users = new ArrayList<>();
+            if(list2 != null){
+                for (WxUserDTO wx : list2) {
+                    users.add(wx.getOpenId());
+                }
+            }
+//            users.clear();
+//            users.add("UID_DuLmBRC1Ec6KDqpBqzYGFHYLIU4c");
 //        users.add("UID_v4UdNlzZQxUC8XNQMOsZKLietoTe");
 //        users.add("UID_93EqCrB0jAtbrnKK2NWgTCOrGViR");
 //        users.add("UID_AAQMe13w7HfVGC0cnd9MbWM2y81A");
 
 
-        System.err.println("------------------------开始获取对线数据-------------------------------------");
-
-        //登录取token
-        if(token == null || token.equals("")){
-            token = loginDuixian();
-            System.out.println("token=" + token);
-        }
-
-        if(token == null || token.equals("")) return;
-        //根据token获取70分钟推荐最新数据及上半场推荐最新数据
-        DuixianMatchDTO match_latest_70 = postDuixianData(url_70,param_70);
-        System.err.println("当前最新比赛-满足70分钟后有球：");
-        System.err.println(match_latest_70);
-        if(match_latest_70 != null){
-            //若是推出的新比赛
-            if(match_latest_70.getTeamHomeId() != null && match_latest_70.getTeamAwayId() != null &&
-                    !match_latest_70.getTeamHomeId().equals(home_team_ID_70) && !match_latest_70.getTeamAwayId().equals(away_team_ID_70)){
-                boolean init = false;
-                if(home_team_ID_70.equals("") && away_team_ID_70.equals("")){
-                    init = true;
-                }
-                home_team_ID_70 = match_latest_70.getTeamHomeId();
-                away_team_ID_70 = match_latest_70.getTeamAwayId();
-
-                //推出该比赛
-                int totalscore = Integer.parseInt(match_latest_70.getScore().split(":")[0]) + Integer.parseInt(match_latest_70.getScore().split(":")[1]);
-                String summary = match_latest_70.getLeague() + ": " + match_latest_70.getTeamHomeName() + " VS " + match_latest_70.getTeamAwayName() + " 全场" + (totalscore+0.5) + "大";
-                StringBuffer content = new StringBuffer();
-                content.append(match_latest_70.getLeague() + System.getProperty("line.separator"));
-                content.append(match_latest_70.getTeamHomeName() + " VS " + match_latest_70.getTeamAwayName() + System.getProperty("line.separator"));
-                content.append("当前比分：" + match_latest_70.getScore() + System.getProperty("line.separator"));
-                content.append("推荐时间：" + match_latest_70.getSendTime() + "分钟" + System.getProperty("line.separator"));
-                content.append("预测：全场" + (totalscore + 0.5) + "大"+ System.getProperty("line.separator"));
-                content.append(System.getProperty("line.separator"));
-                content.append(System.getProperty("line.separator"));
-                content.append("温馨提示：彩市有风险，投注须谨慎。预测仅供娱乐参考，还需理性购彩!");
-
-                if(!init){
-                    doPostData(summary,content.toString(),users);
-                    //保存该场比赛到数据库
-                    match_latest_70.setSendDate(new Date());
-                    match_latest_70.setRule("下半场");
-                    this.save(match_latest_70);
-                }
-
+            //获取动态ip
+            if(dynamicIP == null){
+                dynamicIP = getdynamicIP();
+                beginTime = System.currentTimeMillis();
+                token = null;
             }
-        }
-
-        DuixianMatchDTO match_latest_half = postDuixianData(url_half,param_half);
-        System.err.println("当前最新比赛-上半场至少有一球：");
-        System.err.println(match_latest_half);
-        if(match_latest_half != null){
-            //若是推出的新比赛
-            if(match_latest_half.getTeamHomeId() != null && match_latest_half.getTeamAwayId() != null &&
-                    !match_latest_half.getTeamHomeId().equals(home_team_ID_half) && !match_latest_half.getTeamAwayId().equals(away_team_ID_half)){
-                boolean init = false;
-                if(home_team_ID_half.equals("") && away_team_ID_half.equals("")){
-                    init = true;
-                }
-                home_team_ID_half = match_latest_half.getTeamHomeId();
-                away_team_ID_half = match_latest_half.getTeamAwayId();
-
-                //推出该比赛
-                int totalscore = Integer.parseInt(match_latest_half.getScore().split(":")[0]) + Integer.parseInt(match_latest_half.getScore().split(":")[1]);
-                String summary = match_latest_half.getLeague() + ": " + match_latest_half.getTeamHomeName() + " VS " + match_latest_half.getTeamAwayName();
-                StringBuffer content = new StringBuffer();
-                content.append(match_latest_half.getLeague() + System.getProperty("line.separator"));
-                content.append(match_latest_half.getTeamHomeName() + " VS " + match_latest_half.getTeamAwayName() + System.getProperty("line.separator"));
-                content.append("当前比分：" + match_latest_half.getScore() + System.getProperty("line.separator"));
-                content.append("推荐时间：" + match_latest_half.getSendTime() + "分钟" + System.getProperty("line.separator"));
-                content.append("预测：上半场至少有一球产生" + System.getProperty("line.separator"));
-                content.append(System.getProperty("line.separator"));
-                content.append(System.getProperty("line.separator"));
-                content.append("温馨提示：彩市有风险，投注须谨慎。预测仅供娱乐参考，还需理性购彩!");
-
-                if(!init){
-                    doPostData(summary,content.toString(),users);
-                    //保存该场比赛到数据库
-                    match_latest_half.setSendDate(new Date());
-                    match_latest_half.setRule("上半场");
-                    this.save(match_latest_half);
-                }
-
-
+            if(System.currentTimeMillis() - beginTime > 10 * 60 * 1000){
+                //超时，重新获取
+                dynamicIP = getdynamicIP();
+                beginTime = System.currentTimeMillis();
+                token = null;
             }
-        }
-        //将完场比赛状态更新到表
-        JSONObject jsonObject_70 = postLatest10(url_70,param_70);
-        if(jsonObject_70 != null){
-            JSONArray arrays = jsonObject_70.getJSONArray("data");
-            for (Object obj : arrays) {
-                if(((JSONObject)obj).getInteger("is_running") == 0){
-                    String key = ((JSONObject)obj).getString("KEY");
-                    ((DuixianMatchDao)this.baseDao).updateStatusByKey(key);
+            if(dynamicIP == null){
+                return;
+            }
+            System.err.println("------------------------ip时长剩余" + (600-(System.currentTimeMillis() - beginTime)/1000) + "秒 -------------------------------------");
+            System.err.println("------------------------开始获取对线数据-------------------------------------");
+            System.err.println("------------------------当前重试次数" + (5-retryTimes) +"-------------------------------------");
+            //登录取token
+            if(token == null || token.equals("")){
+                token = loginDuixian();
+                if(token.equals("error code")){
+                    dynamicIP = null;
+                    token = null;
+                    return;
+                }
+                System.out.println("token=" + token);
+            }
+
+            if(token == null || token.equals("")){
+                retryTimes -= 1;
+                return;
+            }
+            //根据token获取70分钟推荐最新数据及上半场推荐最新数据
+            DuixianMatchDTO match_latest_70 = postDuixianData(url_70,param_70);
+            System.err.println("当前最新比赛-满足70分钟后有球：");
+            System.err.println(match_latest_70);
+            if(match_latest_70 == null){
+                retryTimes -= 1;
+            }else {
+                //若是推出的新比赛
+                if(match_latest_70.getTeamHomeId() != null && match_latest_70.getTeamAwayId() != null &&
+                        !match_latest_70.getTeamHomeId().equals(home_team_ID_70) && !match_latest_70.getTeamAwayId().equals(away_team_ID_70)){
+                    boolean init = false;
+                    if(home_team_ID_70.equals("") && away_team_ID_70.equals("")){
+                        init = true;
+                    }
+                    home_team_ID_70 = match_latest_70.getTeamHomeId();
+                    away_team_ID_70 = match_latest_70.getTeamAwayId();
+
+                    //推出该比赛
+                    int totalscore = Integer.parseInt(match_latest_70.getScore().split(":")[0]) + Integer.parseInt(match_latest_70.getScore().split(":")[1]);
+                    String summary = match_latest_70.getLeague() + ": " + match_latest_70.getTeamHomeName() + " VS " + match_latest_70.getTeamAwayName() + " 全场" + (totalscore+0.5) + "大";
+                    StringBuffer content = new StringBuffer();
+                    content.append(match_latest_70.getLeague() + System.getProperty("line.separator"));
+                    content.append(match_latest_70.getTeamHomeName() + " VS " + match_latest_70.getTeamAwayName() + System.getProperty("line.separator"));
+                    content.append("当前比分：" + match_latest_70.getScore() + System.getProperty("line.separator"));
+                    content.append("推荐时间：" + match_latest_70.getSendTime() + "分钟" + System.getProperty("line.separator"));
+                    content.append("预测：全场" + (totalscore + 0.5) + "大"+ System.getProperty("line.separator"));
+                    content.append(System.getProperty("line.separator"));
+                    content.append(System.getProperty("line.separator"));
+                    content.append("温馨提示：彩市有风险，投注须谨慎。预测仅供娱乐参考，还需理性购彩!");
+
+                    if(!init){
+                        doPostData(summary,content.toString(),users);
+                        //保存该场比赛到数据库
+                        match_latest_70.setSendDate(new Date());
+                        match_latest_70.setRule("下半场");
+                        this.save(match_latest_70);
+                    }
+
                 }
             }
-        }
-        //检测完场比赛
-        List<DuixianMatchDTO> finishedList = ((DuixianMatchDao)this.baseDao).getFinishedList();
-        for (DuixianMatchDTO dto : finishedList) {
-            //根据对线key去对比赛果列表
-            String duixian_key = dto.getDuixianKey();
-            if(duixian_key == null || duixian_key.equals("")) continue;
-            //查比赛日期，从头查起
-            Date date = dto.getBeginDate();
-            SimpleDateFormat sdf = new SimpleDateFormat("M-dd");
-            String queryDate = sdf.format(date).toString();
-            System.err.println("查询日期：" + queryDate);
-            JSONObject jsonObject = checkResult(1,queryDate);
-            if(jsonObject == null) return;
-            int totalPages = jsonObject.getJSONObject("data").getInteger("pages");
-            boolean iffind = false;
-            for (int i = 1; i <= totalPages; i++) {
-                if(!iffind) break;
-                JSONObject queryJson = checkResult(i,queryDate);
-                if(queryJson != null){
-                    JSONArray arrays = queryJson.getJSONObject("data").getJSONArray("list");
-                    for (Object obj : arrays) {
-                        String KEY = ((JSONObject) obj).getString("KEY");
-                        if(KEY != null && duixian_key.equals(KEY)){
-                            String whole_score = ((JSONObject) obj).getJSONObject("NCN").getString("SCORE");
-                            String half_score = ((JSONObject) obj).getJSONObject("NCN").getString("H:SCORE");
-                            dto.setWholeScore(whole_score);
-                            dto.setHalfScore(half_score);
-                            int dtoscores = Integer.parseInt(dto.getScore().split(":")[0]) + Integer.parseInt(dto.getScore().split(":")[1]);
-                            if(dto.getRule().equals("上半场")){
-                                //判断中场比分和>推荐比分和
-                                int halfscores = Integer.parseInt(half_score.split(":")[0]) + Integer.parseInt(half_score.split(":")[1]);
-                                if(halfscores > dtoscores){
-                                    dto.setResult("命中");
-                                }else{
-                                    dto.setResult("未命中");
-                                }
-                            }else{
-                                //判断全场比分和>推荐比分和
-                                int wholescores = Integer.parseInt(whole_score.split(":")[0]) + Integer.parseInt(whole_score.split(":")[1]);
-                                if(wholescores > dtoscores){
-                                    dto.setResult("命中");
-                                }else{
-                                    dto.setResult("未命中");
+
+            DuixianMatchDTO match_latest_half = postDuixianData(url_half,param_half);
+            System.err.println("当前最新比赛-上半场至少有一球：");
+            System.err.println(match_latest_half);
+            if(match_latest_half == null){
+                retryTimes -= 1;
+            }else{
+                //若是推出的新比赛
+                if(match_latest_half.getTeamHomeId() != null && match_latest_half.getTeamAwayId() != null &&
+                        !match_latest_half.getTeamHomeId().equals(home_team_ID_half) && !match_latest_half.getTeamAwayId().equals(away_team_ID_half)){
+                    boolean init = false;
+                    if(home_team_ID_half.equals("") && away_team_ID_half.equals("")){
+                        init = true;
+                    }
+                    home_team_ID_half = match_latest_half.getTeamHomeId();
+                    away_team_ID_half = match_latest_half.getTeamAwayId();
+
+                    //推出该比赛
+                    int totalscore = Integer.parseInt(match_latest_half.getScore().split(":")[0]) + Integer.parseInt(match_latest_half.getScore().split(":")[1]);
+                    String summary = match_latest_half.getLeague() + ": " + match_latest_half.getTeamHomeName() + " VS " + match_latest_half.getTeamAwayName();
+                    StringBuffer content = new StringBuffer();
+                    content.append(match_latest_half.getLeague() + System.getProperty("line.separator"));
+                    content.append(match_latest_half.getTeamHomeName() + " VS " + match_latest_half.getTeamAwayName() + System.getProperty("line.separator"));
+                    content.append("当前比分：" + match_latest_half.getScore() + System.getProperty("line.separator"));
+                    content.append("推荐时间：" + match_latest_half.getSendTime() + "分钟" + System.getProperty("line.separator"));
+                    content.append("预测：上半场至少有一球产生" + System.getProperty("line.separator"));
+                    content.append(System.getProperty("line.separator"));
+                    content.append(System.getProperty("line.separator"));
+                    content.append("温馨提示：彩市有风险，投注须谨慎。预测仅供娱乐参考，还需理性购彩!");
+
+                    if(!init){
+                        doPostData(summary,content.toString(),users);
+                        //保存该场比赛到数据库
+                        match_latest_half.setSendDate(new Date());
+                        match_latest_half.setRule("上半场");
+                        this.save(match_latest_half);
+                    }
+                }
+            }
+            //将完场比赛状态更新到表
+            JSONObject jsonObject_70 = postLatest10(url_70,param_70);
+            if(jsonObject_70 == null){
+                retryTimes -= 1;
+            }else {
+                JSONArray arrays = jsonObject_70.getJSONArray("data");
+                for (Object obj : arrays) {
+                    if(((JSONObject)obj).getInteger("is_running") == 0){
+                        String key = ((JSONObject)obj).getString("KEY");
+                        ((DuixianMatchDao)this.baseDao).updateStatusByKey(key);
+                    }
+                }
+            }
+            //将完场比赛状态更新到表
+            JSONObject jsonObject_half = postLatest10(url_half,param_half);
+            if(jsonObject_half == null){
+                retryTimes -= 1;
+            }else{
+                JSONArray arrays = jsonObject_half.getJSONArray("data");
+                for (Object obj : arrays) {
+                    if(((JSONObject)obj).getInteger("is_running") == 0){
+                        String key = ((JSONObject)obj).getString("KEY");
+                        ((DuixianMatchDao)this.baseDao).updateStatusByKey(key);
+                    }
+                }
+            }
+            //检测完场比赛
+            List<DuixianMatchDTO> finishedList = ((DuixianMatchDao)this.baseDao).getFinishedList();
+            for (DuixianMatchDTO dto : finishedList) {
+                //根据对线key去对比赛果列表
+                String duixian_key = dto.getDuixianKey();
+                if(duixian_key == null || duixian_key.equals("")) continue;
+                //查比赛日期，从头查起
+                Date date = dto.getBeginDate();
+                SimpleDateFormat sdf = new SimpleDateFormat("M-dd");
+                String queryDate = sdf.format(date).toString();
+                System.err.println("查询日期：" + queryDate);
+                JSONObject jsonObject = checkResult(1,queryDate);
+                if(jsonObject == null) {
+                    retryTimes -= 1;
+                }else {
+                    int totalPages = jsonObject.getJSONObject("data").getInteger("pages");
+                    boolean iffind = false;
+                    for (int i = 1; i <= totalPages; i++) {
+                        if(!iffind) break;
+                        JSONObject queryJson = checkResult(i,queryDate);
+                        if(queryJson != null){
+                            JSONArray arrays = queryJson.getJSONObject("data").getJSONArray("list");
+                            for (Object obj : arrays) {
+                                String KEY = ((JSONObject) obj).getString("KEY");
+                                if(KEY != null && duixian_key.equals(KEY)){
+                                    String whole_score = ((JSONObject) obj).getJSONObject("NCN").getString("SCORE");
+                                    String half_score = ((JSONObject) obj).getJSONObject("NCN").getString("H:SCORE");
+                                    dto.setWholeScore(whole_score);
+                                    dto.setHalfScore(half_score);
+                                    int dtoscores = Integer.parseInt(dto.getScore().split(":")[0]) + Integer.parseInt(dto.getScore().split(":")[1]);
+                                    if(dto.getRule().equals("上半场")){
+                                        //判断中场比分和>推荐比分和
+                                        int halfscores = Integer.parseInt(half_score.split(":")[0]) + Integer.parseInt(half_score.split(":")[1]);
+                                        if(halfscores > dtoscores){
+                                            dto.setResult("命中");
+                                        }else{
+                                            dto.setResult("未命中");
+                                        }
+                                    }else{
+                                        //判断全场比分和>推荐比分和
+                                        int wholescores = Integer.parseInt(whole_score.split(":")[0]) + Integer.parseInt(whole_score.split(":")[1]);
+                                        if(wholescores > dtoscores){
+                                            dto.setResult("命中");
+                                        }else{
+                                            dto.setResult("未命中");
+                                        }
+                                    }
+                                    break;
                                 }
                             }
-                            break;
+                            iffind = true;
                         }
                     }
-                    iffind = true;
+                    //更新数据
+                    this.update(dto);
                 }
             }
-            //更新数据
-            this.update(dto);
+        }catch (Exception e){
+            e.printStackTrace();
+            retryTimes -= 1;
         }
 
         }
+
+    private String getdynamicIP() {
+        //构造api连接地址
+        Map<String, Object> params = getParamMap();
+        StringBuffer sb = new StringBuffer(apiUrl);
+        sb.append("?");
+        params.entrySet().stream().forEach(param -> {
+            sb.append(param.getKey()).append("=").append(param.getValue()).append("&");
+        });
+        String url = sb.toString();
+
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        try {
+            HttpGet httpget = new HttpGet(url);
+            httpget.addHeader("Accept-Encoding", "gzip");
+            CloseableHttpResponse response = httpclient.execute(httpget);
+            System.out.println(response.getStatusLine());
+            //获取到的结果
+            String proxyHostStr = EntityUtils.toString(response.getEntity());
+            JSONObject ipjson = JSONObject.parseObject(proxyHostStr);
+            String ip = ipjson.getJSONArray("data").getJSONObject(0).getString("ip");
+            String port = ipjson.getJSONArray("data").getJSONObject(0).getString("port");
+            System.out.println("提取到的代理ip:" + ip + ":" + port);
+            return ip + ":" + port;
+
+
+        } catch (Exception e) {
+            System.out.println(e);
+            return null;
+        }
+    }
 
     private JSONObject postLatest10(String url, String param) {
-        StringBuffer buffer = new StringBuffer();
-        OutputStreamWriter out;
-        BufferedReader in = null;
         try {
-            URL realUrl = new URL(url);
-            // 打开和URL之间的连接
-            HttpURLConnection conn = (HttpURLConnection) realUrl.openConnection();
-            //设置超时时间
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(15000);
-            //设置请求属性
-            conn.setRequestMethod("POST");
-            conn.addRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("accept", "*/*");
-            conn.setRequestProperty("connection", "Keep-Alive");
-            conn.setRequestProperty("Authorization", "Token " + token);
-            conn.setDoOutput(true);
-            conn.setDoInput(true);
+            HttpHost proxyHost = HttpHost.create(dynamicIP);
+            CloseableHttpClient client = HttpClients.custom().build();
+            HttpPost httppost = new HttpPost(url);
+            RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(6000)
+                    .setSocketTimeout(6000).setProxy(proxyHost).build();
+            httppost.setConfig(requestConfig);
+            httppost.addHeader("Authorization","Token " + token);
+            httppost.setEntity(new StringEntity(param));
 
-            // 获取URLConnection对象对应的输出流
-            out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");// utf-8编码
-            // 发送请求参数
-            out.write(param);
+            HttpResponse httpResponse = client.execute(httppost);
 
-            // flush输出流的缓冲
-            out.flush();
-            // 定义BufferedReader输入流来读取URL的响应
-            in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf8"));
-            String line;
-            while ((line = in.readLine()) != null) {
-                buffer.append(line);
+            int responseCode = httpResponse.getStatusLine().getStatusCode();
+            System.err.println("获取最近10场比赛-状态码：" + responseCode);
+            if(responseCode != 200){
+                return null;
             }
-            if (out != null) {
-                out.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-            JSONObject jsonObject = JSONObject.parseObject(buffer.toString());
+
+            String responseData =  EntityUtils.toString(httpResponse.getEntity());
+            JSONObject jsonObject = JSONObject.parseObject(responseData);
             return jsonObject;
         }catch (Exception e){
             e.printStackTrace();
@@ -448,48 +418,28 @@ public class MatchScheduleServiceImpl extends CrudServiceImpl<DuixianMatchDao, D
     }
 
     private JSONObject checkResult(int pages,String queryDate) {
-        List<DuixianMatchDTO> result = new ArrayList<>();
-        StringBuffer buffer = new StringBuffer();
-        OutputStreamWriter out;
-        BufferedReader in = null;
         try {
-            URL realUrl = new URL(url_checkResult);
-            // 打开和URL之间的连接
-            HttpURLConnection conn = (HttpURLConnection) realUrl.openConnection();
-            //设置超时时间
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(15000);
-            //设置请求属性
-            conn.setRequestMethod("POST");
-            conn.addRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("accept", "*/*");
-            conn.setRequestProperty("connection", "Keep-Alive");
-            conn.setRequestProperty("Authorization", "Token " + token);
-            conn.setDoOutput(true);
-            conn.setDoInput(true);
-
-            // 获取URLConnection对象对应的输出流
-            out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");// utf-8编码
             // 发送请求参数
             String param = "{\"page\":" + pages + ",\"date\":" + '"' + queryDate + '"' + ",\"lids\":[],\"uid\":1619}";
-            System.out.println(param);
-            out.write(param);
+            HttpHost proxyHost = HttpHost.create(dynamicIP);
+            CloseableHttpClient client = HttpClients.custom().build();
+            HttpPost httppost = new HttpPost(url_checkResult);
+            RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(6000)
+                    .setSocketTimeout(6000).setProxy(proxyHost).build();
+            httppost.setConfig(requestConfig);
+            httppost.addHeader("Authorization","Token " + token);
+            httppost.setEntity(new StringEntity(param));
 
-            // flush输出流的缓冲
-            out.flush();
-            // 定义BufferedReader输入流来读取URL的响应
-            in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf8"));
-            String line;
-            while ((line = in.readLine()) != null) {
-                buffer.append(line);
+            HttpResponse httpResponse = client.execute(httppost);
+
+            int responseCode = httpResponse.getStatusLine().getStatusCode();
+            System.err.println("检查赛果-状态码：" + responseCode);
+            if(responseCode != 200){
+                return null;
             }
-            if (out != null) {
-                out.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-            JSONObject jsonObject = JSONObject.parseObject(buffer.toString());
+
+            String responseData =  EntityUtils.toString(httpResponse.getEntity());
+            JSONObject jsonObject = JSONObject.parseObject(responseData);
             return jsonObject;
         } catch (Exception e) {
             e.printStackTrace();
@@ -508,46 +458,27 @@ public class MatchScheduleServiceImpl extends CrudServiceImpl<DuixianMatchDao, D
 
     private DuixianMatchDTO postDuixianData(String url, String param) {
         DuixianMatchDTO latest = new DuixianMatchDTO();
-
-        StringBuffer buffer = new StringBuffer();
-        OutputStreamWriter out;
-        BufferedReader in = null;
         try {
-            URL realUrl = new URL(url);
-            // 打开和URL之间的连接
-            HttpURLConnection conn = (HttpURLConnection) realUrl.openConnection();
-            //设置超时时间
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(15000);
-            //设置请求属性
-            conn.setRequestMethod("POST");
-            conn.addRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("accept", "*/*");
-            conn.setRequestProperty("connection", "Keep-Alive");
-            conn.setRequestProperty("Authorization", "Token " + token);
-            conn.setDoOutput(true);
-            conn.setDoInput(true);
+            HttpHost proxyHost = HttpHost.create(dynamicIP);
+            CloseableHttpClient client = HttpClients.custom().build();
+            HttpPost httppost = new HttpPost(url);
+            RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(6000)
+                    .setSocketTimeout(6000).setProxy(proxyHost).build();
+            httppost.setConfig(requestConfig);
+            httppost.addHeader("Authorization","Token " + token);
+            httppost.setEntity(new StringEntity(param));
 
-            // 获取URLConnection对象对应的输出流
-            out = new OutputStreamWriter( conn.getOutputStream(),"UTF-8");// utf-8编码
-            // 发送请求参数
-            out.write(param);
+            HttpResponse httpResponse = client.execute(httppost);
 
-            // flush输出流的缓冲
-            out.flush();
-            // 定义BufferedReader输入流来读取URL的响应
-            in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf8"));
-            String line;
-            while ((line = in.readLine()) != null) {
-                buffer.append(line);
+            int responseCode = httpResponse.getStatusLine().getStatusCode();
+            System.err.println("获取最新比赛-状态码：" + responseCode);
+            if(responseCode != 200){
+                return null;
             }
-            if(out!=null){
-                out.close();
-            }
-            if(in!=null){
-                in.close();
-            }
-            JSONObject jsonObject = JSONObject.parseObject(buffer.toString());
+
+            String responseData =  EntityUtils.toString(httpResponse.getEntity());
+//            System.err.println("登录响应内容：" + responseData);
+            JSONObject jsonObject = JSONObject.parseObject(responseData);
             if(jsonObject != null && jsonObject.getString("msg").equals("返回最近10场比赛")){
                 //获取最新场次比赛
                 JSONObject match = jsonObject.getJSONArray("data").getJSONObject(0);
@@ -573,46 +504,28 @@ public class MatchScheduleServiceImpl extends CrudServiceImpl<DuixianMatchDao, D
     }
 
     private String loginDuixian() throws MalformedURLException {
-        StringBuffer buffer = new StringBuffer();
-        OutputStreamWriter out;
-        BufferedReader in = null;
-        String params  = "{\"username\":\"15928651024\",\"password\":\"07021128\"}";
+        String params = "{\"username\":\"18086820125\",\"password\":\"123456\"}";
         try {
             String url = "http://api.dui-xian.com:8002/api/oddsindex/login";
-            URL realUrl = new URL(url);
-            // 打开和URL之间的连接
-            HttpURLConnection conn = (HttpURLConnection) realUrl.openConnection();
-            //设置超时时间
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(15000);
-            //设置请求属性
-            conn.setRequestMethod("POST");
-            conn.addRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("accept", "*/*");
-            conn.setRequestProperty("connection", "Keep-Alive");
-            conn.setDoOutput(true);
-            conn.setDoInput(true);
+            HttpHost proxyHost = HttpHost.create(dynamicIP);
+            CloseableHttpClient client = HttpClients.custom().build();
+            HttpPost httppost = new HttpPost(url);
+            RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(6000)
+                    .setSocketTimeout(6000).setProxy(proxyHost).build();
+            httppost.setConfig(requestConfig);
+            httppost.setEntity(new StringEntity(params));
 
-            // 获取URLConnection对象对应的输出流
-            out = new OutputStreamWriter( conn.getOutputStream(),"UTF-8");// utf-8编码
-            // 发送请求参数
-            out.write(params);
+            HttpResponse httpResponse = client.execute(httppost);
 
-            // flush输出流的缓冲
-            out.flush();
-            // 定义BufferedReader输入流来读取URL的响应
-            in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf8"));
-            String line;
-            while ((line = in.readLine()) != null) {
-                buffer.append(line);
+            int responseCode = httpResponse.getStatusLine().getStatusCode();
+            System.err.println("登录状态码：" + responseCode);
+            if(responseCode != 200){
+                return "error code";
             }
-            if(out!=null){
-                out.close();
-            }
-            if(in!=null){
-                in.close();
-            }
-            JSONObject jsonObject = JSONObject.parseObject(buffer.toString());
+
+            String responseData =  EntityUtils.toString(httpResponse.getEntity());
+            System.err.println("登录响应内容：" + responseData);
+            JSONObject jsonObject = JSONObject.parseObject(responseData);
             return jsonObject.get("token").toString();
         }catch (Exception e){
             e.printStackTrace();
@@ -655,6 +568,32 @@ public class MatchScheduleServiceImpl extends CrudServiceImpl<DuixianMatchDao, D
 
     }
 
+    public static String createPwd() {
+        String passwordTemplate = "pwd={pwd}&pid=-1&cid=-1&uid=&sip=0&nd=1" ;
+        return passwordTemplate.replace("{pwd}", pwd);
+    }
+
+    public static Map<String, Object> getParamMap() {
+        /****
+         * 详细参数参照产品文档：
+         ****/
+        Map<String, Object> map = new HashMap(10);
+        map.put("type", type);
+        map.put("num", num);
+        map.put("unbindTime", unbindTime);
+        map.put("dataType", dataType);
+        map.put("orderId", orderId);
+        map.put("time", System.currentTimeMillis() / 1000);
+        map.put("sign", getSign(orderId, pwd));
+        return map;
+    }
+
+    public static String getSign(String orderId, String secret) {
+        long time = System.currentTimeMillis() / 1000;
+        String str1 = String.format("orderId=%s&secret=%s&time=%s", orderId, secret, time);
+        String sign = org.apache.commons.codec.digest.DigestUtils.md5Hex(str1).toLowerCase();
+        return sign;
+    }
 
     /**
      * 获取实时指数
